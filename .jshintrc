@@ -3,7 +3,7 @@
     "node": true,
     "globalstrict": true,
     "evil": true,
-    "unused": true,
+    "unused": false,
     "undef": true,
     "newcap": true,
     "esnext": true,

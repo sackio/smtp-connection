@@ -8,6 +8,7 @@ var tls = require('tls');
 var os = require('os');
 var crypto = require('crypto');
 var DataStream = require('./data-stream');
+var Socks = require('socks');
 
 module.exports = SMTPConnection;
 
@@ -29,7 +30,11 @@ module.exports = SMTPConnection;
  *  * **debug** - if true, emits 'log' events with all traffic between client and server
  *  * **tls** - options for createCredentials
  *  * **socket** - existing socket to use instead of creating a new one (see: http://nodejs.org/api/net.html#net_class_net_socket)
- *
+ *  * **proxy** - {
+        ipaddress
+      , port
+      , type (5)
+      }
  * @constructor
  * @namespace SMTP Client module
  * @param {Object} [options] Option properties
@@ -153,6 +158,17 @@ SMTPConnection.prototype.connect = function(connectCallback) {
     if (this.options.socket) {
         this._socket = this.options.socket;
         this._socket.connect(this.options.port, this.options.host, this._onConnect.bind(this));
+    } else if (this.options.proxy) {
+        this.options.target = opts;
+        var self = this;
+        Object.keys(this.options.tls).forEach((function(key) {
+          opts[key] = this.options.tls[key];
+        }).bind(this));
+        Socks.createConnection(this.options, function(err, socket, info){
+          self._socket = socket;
+          self._onConnect.bind(self)();
+          return;
+        });
     } else if (this.options.secure) {
         if (this.options.tls) {
             Object.keys(this.options.tls).forEach((function(key) {
